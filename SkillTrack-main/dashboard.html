@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkillTrack — Burnout Alert System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & BASE ──────────────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d0f14;
+  --surface:#13161e;
+  --surface2:#1a1e28;
+  --surface3:#22273a;
+  --border:#2a2f42;
+  --border2:#353b52;
+  --text:#e8eaf0;
+  --text2:#8b90a7;
+  --text3:#555b72;
+  --red:#e05555;
+  --red-bg:#1f1418;
+  --red-border:#3d2020;
+  --amber:#d4843a;
+  --amber-bg:#1a1610;
+  --amber-border:#3a2e18;
+  --green:#4aab6d;
+  --green-bg:#111a15;
+  --green-border:#1f3628;
+  --blue:#4a90d9;
+  --blue-bg:#111823;
+  --accent:#5b7cf6;
+  --font:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;min-height:100vh;}
+
+/* ── TOPBAR ────────────────────────────────────────────────────────── */
+.topbar{display:flex;align-items:center;gap:12px;padding:0 24px;height:52px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.topbar-logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px;letter-spacing:-.3px;}
+.topbar-logo svg{width:22px;height:22px;opacity:.9;}
+.topbar-sep{color:var(--border2);margin:0 4px;}
+.topbar-page{color:var(--text2);font-size:14px;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:var(--font);font-size:13px;cursor:pointer;transition:background .15s,border-color .15s;}
+.btn:hover{background:var(--surface3);border-color:var(--border2);}
+.btn-alert{background:var(--red-bg);border-color:var(--red-border);color:var(--red);}
+.btn-alert:hover{background:#2a1a1a;}
+.alert-dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}}
+
+/* ── LAYOUT ────────────────────────────────────────────────────────── */
+.main{display:flex;min-height:calc(100vh - 52px);}
+.sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:16px 0;}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:13px;color:var(--text2);cursor:pointer;transition:all .15s;border-left:2px solid transparent;}
+.sidebar-item:hover{color:var(--text);background:var(--surface2);}
+.sidebar-item.active{color:var(--text);background:var(--surface2);border-left-color:var(--accent);}
+.sidebar-item svg{width:16px;height:16px;opacity:.7;}
+.sidebar-section{padding:20px 20px 6px;font-size:11px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;}
+.content{flex:1;padding:24px;overflow-y:auto;}
+
+/* ── STATS ROW ─────────────────────────────────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+.stat-val{font-size:28px;font-weight:600;line-height:1;margin-bottom:5px;letter-spacing:-.5px;}
+.stat-val.red{color:var(--red);}
+.stat-val.amber{color:var(--amber);}
+.stat-val.green{color:var(--green);}
+.stat-label{font-size:12px;color:var(--text2);}
+
+/* ── ALERT BANNER ──────────────────────────────────────────────────── */
+.alert-banner{background:var(--red-bg);border:1px solid var(--red-border);border-radius:10px;padding:16px 18px;margin-bottom:20px;display:none;}
+.alert-banner.show{display:block;animation:slideIn .3s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+.alert-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.alert-icon{width:32px;height:32px;border-radius:8px;background:rgba(224,85,85,.15);border:1px solid var(--red-border);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.alert-title{font-weight:600;font-size:14px;}
+.alert-sub{font-size:12px;color:var(--text2);margin-top:2px;}
+.alert-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;}
+.alert-metric{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center;}
+.alert-metric-val{font-size:20px;font-weight:600;letter-spacing:-.3px;}
+.alert-metric-val.bad{color:var(--red);}
+.alert-metric-val.warn{color:var(--amber);}
+.alert-metric-val.ok{color:var(--text);}
+.alert-metric-label{font-size:11px;color:var(--text2);margin-top:2px;}
+.alert-bullets{list-style:none;margin-bottom:14px;}
+.alert-bullets li{font-size:13px;color:var(--text2);padding:3px 0;display:flex;align-items:flex-start;gap:8px;}
+.bullet-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.bullet-dot.red{background:var(--red);}
+.bullet-dot.amber{background:var(--amber);}
+.alert-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.btn-whatsapp{background:rgba(74,171,109,.1);border-color:var(--green-border);color:var(--green);}
+.btn-whatsapp:hover{background:rgba(74,171,109,.18);}
+.btn-schedule{background:rgba(74,144,217,.1);border-color:#1e3050;color:var(--blue);}
+.btn-schedule:hover{background:rgba(74,144,217,.18);}
+.btn-profile{background:var(--surface3);border-color:var(--border2);color:var(--text2);}
+
+/* ── TABLE ─────────────────────────────────────────────────────────── */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.section-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;}
+.controls-row{display:flex;gap:10px;flex-wrap:wrap;}
+.input-search{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:13px;padding:7px 12px;border-radius:7px;width:200px;outline:none;}
+.input-search:focus{border-color:var(--border2);}
+.select{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:13px;padding:7px 12px;border-radius:7px;outline:none;cursor:pointer;}
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+table{width:100%;border-collapse:collapse;}
+thead th{padding:10px 14px;text-align:left;font-size:11px;color:var(--text3);font-weight:500;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);}
+tbody tr{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--surface2);}
+tbody td{padding:11px 14px;vertical-align:middle;}
+.name-cell strong{font-size:13px;font-weight:500;}
+.name-cell span{font-size:11px;color:var(--text3);display:block;margin-top:1px;font-family:var(--mono);}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+.badge-high{background:rgba(224,85,85,.12);color:var(--red);border:1px solid var(--red-border);}
+.badge-medium{background:rgba(212,132,58,.12);color:var(--amber);border:1px solid var(--amber-border);}
+.badge-low{background:rgba(74,171,109,.12);color:var(--green);border:1px solid var(--green-border);}
+.conf-bar-wrap{display:flex;align-items:center;gap:8px;}
+.conf-bar{height:5px;background:var(--surface3);border-radius:3px;width:70px;overflow:hidden;flex-shrink:0;}
+.conf-fill{height:100%;border-radius:3px;}
+.trend-down{color:var(--red);font-size:12px;}
+.trend-up{color:var(--green);font-size:12px;}
+.trend-stable{color:var(--text3);font-size:12px;}
+.days-critical{color:var(--red);font-weight:500;}
+.action-btn{font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--font);transition:all .15s;}
+.action-btn:hover{background:var(--surface3);color:var(--text);}
+.action-btn.sent{background:var(--green-bg);color:var(--green);border-color:var(--green-border);}
+
+/* ── LOADING & STATES ──────────────────────────────────────────────── */
+.loading{text-align:center;padding:40px;color:var(--text3);font-size:13px;}
+.error-msg{background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:14px 16px;color:var(--red);font-size:13px;margin-bottom:16px;}
+.status-bar{background:var(--surface2);border-top:1px solid var(--border);padding:6px 24px;font-size:11px;color:var(--text3);display:flex;gap:16px;}
+
+/* ── MODAL ──────────────────────────────────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:12px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;}
+.modal-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.modal-title{font-weight:600;font-size:15px;}
+.modal-close{background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;padding:2px 6px;border-radius:4px;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:20px;}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.detail-stat{background:var(--surface2);border-radius:8px;padding:10px 12px;}
+.detail-label{font-size:11px;color:var(--text3);margin-bottom:4px;}
+.detail-val{font-size:16px;font-weight:600;}
+.sparkline-section{margin-top:14px;}
+.spark-label{font-size:11px;color:var(--text3);margin-bottom:6px;}
+.sparkline{display:flex;align-items:flex-end;gap:2px;height:50px;border-bottom:1px solid var(--border);}
+.spark-bar{flex:1;border-radius:2px 2px 0 0;min-height:3px;opacity:.8;transition:opacity .15s;}
+.spark-bar:hover{opacity:1;}
+.modal-actions{padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:10px;}
+
+/* ── CHECKIN FORM ───────────────────────────────────────────────────── */
+.form-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;margin-top:20px;}
+.form-title{font-weight:600;font-size:14px;margin-bottom:16px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-group label{display:block;font-size:11px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;}
+.form-group input,.form-group select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:13px;padding:8px 12px;border-radius:7px;outline:none;}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent);}
+.range-val{font-size:12px;color:var(--accent);font-family:var(--mono);margin-top:4px;}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn-primary:hover{background:#4a6be0;}
+
+/* ── TOAST ───────────────────────────────────────────────────────────── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--green-border);color:var(--green);padding:10px 16px;border-radius:8px;font-size:13px;z-index:300;display:none;animation:toastIn .25s ease;}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+    </svg>
+    SkillTrack
+  </div>
+  <span class="topbar-sep">/</span>
+  <span class="topbar-page">Burnout alert system</span>
+  <div class="topbar-right">
+    <button class="btn" onclick="loadData()">⟳ Refresh</button>
+    <button class="btn" onclick="showSection('counselor')">👤 Counselor view</button>
+    <button class="btn btn-alert" id="topAlertBtn" style="display:none">
+      <span class="alert-dot"></span>
+      <span id="topAlertCount">0 active alerts</span>
+    </button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">Monitor</div>
+    <div class="sidebar-item active" onclick="showSection('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </div>
+    <div class="sidebar-item" onclick="showSection('alerts')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      Active Alerts
+    </div>
+    <div class="sidebar-item" onclick="showSection('checkin')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Daily Check-in
+    </div>
+    <div class="sidebar-section">System</div>
+    <div class="sidebar-item" onclick="showSection('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <div id="errorBox" class="error-msg" style="display:none"></div>
+
+    <!-- DASHBOARD SECTION -->
+    <div id="section-dashboard">
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><div class="stat-val" id="st-total">—</div><div class="stat-label">Students monitored</div></div>
+        <div class="stat-card"><div class="stat-val red" id="st-high">—</div><div class="stat-label">High risk today</div></div>
+        <div class="stat-card"><div class="stat-val amber" id="st-watch">—</div><div class="stat-label">Watch list</div></div>
+        <div class="stat-card"><div class="stat-val green" id="st-safe">—</div><div class="stat-label">Safe zone</div></div>
+      </div>
+
+      <!-- Alert banner (top at-risk student) -->
+      <div class="alert-banner" id="alertBanner">
+        <div class="alert-header">
+          <div class="alert-icon">⚠</div>
+          <div>
+            <div class="alert-title" id="ab-title">—</div>
+            <div class="alert-sub" id="ab-sub">—</div>
+          </div>
+        </div>
+        <div class="alert-metrics">
+          <div class="alert-metric"><div class="alert-metric-val bad" id="ab-mood">—</div><div class="alert-metric-label">Mood avg (7d)</div></div>
+          <div class="alert-metric"><div class="alert-metric-val warn" id="ab-stress">—</div><div class="alert-metric-label">Stress avg (7d)</div></div>
+          <div class="alert-metric"><div class="alert-metric-val ok" id="ab-sleep">—</div><div class="alert-metric-label">Sleep avg (7d)</div></div>
+        </div>
+        <ul class="alert-bullets" id="ab-bullets"></ul>
+        <div class="alert-actions">
+          <button class="btn btn-whatsapp" id="ab-whatsapp-btn" onclick="sendAlertFromBanner('whatsapp')">📲 Send WhatsApp alert</button>
+          <button class="btn btn-schedule">📅 Schedule check-in</button>
+          <button class="btn btn-profile" id="ab-profile-btn" onclick="openModalFromBanner()">👁 View full profile</button>
+        </div>
+      </div>
+
+      <!-- Table controls -->
+      <div class="section-header">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          All students
+        </div>
+        <div class="controls-row">
+          <input class="input-search" id="searchInput" placeholder="Search student…" oninput="filterTable()">
+          <select class="select" id="riskFilter" onchange="filterTable()">
+            <option value="">All risk levels</option>
+            <option value="HIGH">High risk</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="LOW">Low risk</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Confidence</th>
+              <th>Risk level</th>
+              <th>Last mood</th>
+              <th>Sleep 7d</th>
+              <th>Trend</th>
+              <th>Est. days</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="studentTbody">
+            <tr><td colspan="8" class="loading">Loading predictions…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CHECKIN SECTION -->
+    <div id="section-checkin" style="display:none">
+      <div class="form-section">
+        <div class="form-title">📝 Daily mood check-in</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Student ID</label>
+            <input type="number" id="ci-id" placeholder="e.g. 5" min="1" max="50">
+          </div>
+          <div class="form-group">
+            <label>Mood score (1–10)</label>
+            <input type="range" id="ci-mood" min="1" max="10" step="0.5" value="7" oninput="document.getElementById('ci-mood-val').textContent=this.value">
+            <div class="range-val" id="ci-mood-val">7</div>
+          </div>
+          <div class="form-group">
+            <label>Stress level (1–10)</label>
+            <input type="range" id="ci-stress" min="1" max="10" step="0.5" value="5" oninput="document.getElementById('ci-stress-val').textContent=this.value">
+            <div class="range-val" id="ci-stress-val">5</div>
+          </div>
+          <div class="form-group">
+            <label>Sleep hours</label>
+            <input type="range" id="ci-sleep" min="2" max="10" step="0.5" value="7" oninput="document.getElementById('ci-sleep-val').textContent=this.value">
+            <div class="range-val" id="ci-sleep-val">7</div>
+          </div>
+          <div class="form-group">
+            <label>Energy level (1–10)</label>
+            <input type="range" id="ci-energy" min="1" max="10" step="0.5" value="6" oninput="document.getElementById('ci-energy-val').textContent=this.value">
+            <div class="range-val" id="ci-energy-val">6</div>
+          </div>
+          <div class="form-group">
+            <label>Skipped class?</label>
+            <select id="ci-skipped"><option value="0">No</option><option value="1">Yes</option></select>
+          </div>
+        </div>
+        <div style="margin-top:16px">
+          <button class="btn btn-primary" onclick="submitCheckin()">Save check-in</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS SECTION -->
+    <div id="section-settings" style="display:none">
+      <div class="form-section">
+        <div class="form-title">⚙️ API & Twilio configuration</div>
+        <div class="form-grid">
+          <div class="form-group" style="grid-column:1/-1">
+            <label>PHP API base URL</label>
+            <input type="text" id="cfg-api" value="http://localhost/lms/burnout/api.php">
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Counselor phone (for Twilio alerts)</label>
+            <input type="text" id="cfg-phone" placeholder="whatsapp:+91XXXXXXXXXX">
+          </div>
+          <div class="form-group">
+            <label>LSTM threshold (%)</label>
+            <input type="number" id="cfg-threshold" value="50" min="10" max="95">
+          </div>
+          <div class="form-group">
+            <label>Auto-alert on HIGH risk</label>
+            <select id="cfg-auto"><option value="0">Off</option><option value="1">On</option></select>
+          </div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="saveSettings()">Save settings</button>
+          <button class="btn" onclick="testConnection()">Test API connection</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTS LOG SECTION -->
+    <div id="section-alerts" style="display:none">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Time</th><th>Student</th><th>Risk</th><th>Confidence</th><th>Channel</th><th>Status</th></tr></thead>
+          <tbody id="alertsTbody"><tr><td colspan="6" class="loading">No alerts yet.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+  <span id="sb-model">Model: —</span>
+  <span id="sb-gen">Last run: —</span>
+  <span id="sb-count">— predictions loaded</span>
+</div>
+
+<!-- STUDENT DETAIL MODAL -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Student profile</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────
+// Change this to your XAMPP URL once deployed
+const API = 'http://localhost/lms/burnout/api.php';
+let allStudents = [], bannerStudentId = null, alertedIds = new Set();
+
+// ── BOOT ──────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  loadSettings();
+  loadData();
+  setInterval(loadData, 60000); // auto-refresh every 60s
+});
+
+// ── DATA LOADING ──────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const [statsRes, predsRes] = await Promise.all([
+      fetch(`${getApiBase()}?action=stats`),
+      fetch(`${getApiBase()}?action=predictions`)
+    ]);
+    if (!statsRes.ok || !predsRes.ok) throw new Error('API unreachable');
+
+    const stats = await statsRes.json();
+    const preds = await predsRes.json();
+
+    if (stats.error) throw new Error(stats.error);
+
+    renderStats(stats);
+    allStudents = preds.students || [];
+    renderTable(allStudents);
+    updateStatusBar(preds);
+    showBanner(allStudents);
+    updateTopAlertBtn(stats.high_risk);
+    hideError();
+  } catch(e) {
+    renderDemoMode();
+  }
+}
+
+function renderStats(s) {
+  document.getElementById('st-total').textContent = s.total ?? '—';
+  document.getElementById('st-high').textContent  = s.high_risk ?? '—';
+  document.getElementById('st-watch').textContent = s.watch_list ?? '—';
+  document.getElementById('st-safe').textContent  = s.safe_zone ?? '—';
+}
+
+function updateTopAlertBtn(high) {
+  const btn = document.getElementById('topAlertBtn');
+  if (high > 0) {
+    btn.style.display = 'inline-flex';
+    document.getElementById('topAlertCount').textContent = `${high} active alert${high>1?'s':''}`;
+  }
+}
+
+function updateStatusBar(preds) {
+  document.getElementById('sb-model').textContent = `Model AUC: ${preds.model_auc ?? '—'}`;
+  document.getElementById('sb-gen').textContent   = `Last run: ${preds.generated ? new Date(preds.generated).toLocaleString() : '—'}`;
+  document.getElementById('sb-count').textContent = `${(preds.students||[]).length} predictions loaded`;
+}
+
+// ── BANNER ────────────────────────────────────────────────────────────────
+function showBanner(students) {
+  const highRisk = students.filter(s => s.risk_level === 'HIGH');
+  if (!highRisk.length) { document.getElementById('alertBanner').classList.remove('show'); return; }
+
+  const s = highRisk[0];
+  bannerStudentId = s.student_id;
+  const conf = (s.confidence_score * 100).toFixed(1);
+  const days = s.days_to_burnout_est ?? '?';
+
+  document.getElementById('ab-title').textContent =
+    `Burnout risk alert — ${s.name} · ID ${String(s.student_id).padStart(6,'0')}`;
+  document.getElementById('ab-sub').textContent =
+    `LSTM model confidence ${conf}% · ${days} days before predicted crisis`;
+
+  document.getElementById('ab-mood').textContent   = s.avg_mood_7d ?? '—';
+  document.getElementById('ab-stress').textContent = s.avg_stress_7d ?? '—';
+  document.getElementById('ab-sleep').textContent  = s.avg_sleep_7d ?? '—';
+
+  const bullets = document.getElementById('ab-bullets');
+  const bulletData = [
+    { color:'red',   text:`Mood score has dropped to ${s.last_mood}/10 with ${s.trend} trend` },
+    { color:'amber', text:`Avg stress over 7 days: ${s.avg_stress_7d}/10` },
+    { color:'amber', text:`Estimated ${days} days to burnout threshold` },
+  ];
+  bullets.innerHTML = bulletData.map(b =>
+    `<li><span class="bullet-dot ${b.color}"></span>${b.text}</li>`
+  ).join('');
+
+  document.getElementById('alertBanner').classList.add('show');
+}
+
+// ── TABLE ─────────────────────────────────────────────────────────────────
+function renderTable(students) {
+  const tbody = document.getElementById('studentTbody');
+  if (!students.length) { tbody.innerHTML = '<tr><td colspan="8" class="loading">No students match filter.</td></tr>'; return; }
+
+  tbody.innerHTML = students.map(s => {
+    const conf   = (s.confidence_score * 100).toFixed(1);
+    const fill   = s.risk_level === 'HIGH' ? '#e05555' : s.risk_level === 'MEDIUM' ? '#d4843a' : '#4aab6d';
+    const badge  = `badge badge-${s.risk_level.toLowerCase()}`;
+    const tClass = s.trend === 'declining' ? 'trend-down' : s.trend === 'improving' ? 'trend-up' : 'trend-stable';
+    const tIcon  = s.trend === 'declining' ? '↓' : s.trend === 'improving' ? '↑' : '→';
+    const days   = s.days_to_burnout_est ? `~${s.days_to_burnout_est}d` : '—';
+    const daysCls= s.days_to_burnout_est && s.days_to_burnout_est <= 7 ? 'days-critical' : '';
+    const alerted = alertedIds.has(s.student_id);
+    return `
+    <tr onclick="openModal(${s.student_id})">
+      <td class="name-cell"><strong>${s.name}</strong><span>ID #${s.student_id}</span></td>
+      <td>
+        <div class="conf-bar-wrap">
+          <div class="conf-bar"><div class="conf-fill" style="width:${conf}%;background:${fill}"></div></div>
+          ${conf}%
+        </div>
+      </td>
+      <td><span class="${badge}">${s.risk_level}</span></td>
+      <td>${s.last_mood ?? '—'}/10</td>
+      <td>${s.avg_sleep_7d ?? '—'}h</td>
+      <td class="${tClass}">${tIcon} ${s.trend}</td>
+      <td class="${daysCls}">${days}</td>
+      <td><button class="action-btn${alerted?' sent':''}" onclick="alertStudent(event,${s.student_id})">${alerted?'✓ Sent':'Alert'}</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTable() {
+  const q    = document.getElementById('searchInput').value.toLowerCase();
+  const risk = document.getElementById('riskFilter').value;
+  const f    = allStudents.filter(s =>
+    (!q || s.name.toLowerCase().includes(q)) &&
+    (!risk || s.risk_level === risk)
+  );
+  renderTable(f);
+}
+
+// ── ALERT ACTION ──────────────────────────────────────────────────────────
+async function alertStudent(e, id, channel='whatsapp') {
+  e.stopPropagation();
+  try {
+    const res = await fetch(`${getApiBase()}?action=alert`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ student_id: id, channel })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alertedIds.add(id);
+      toast(`✓ Alert sent for student #${id} via ${channel}`);
+      filterTable();
+    } else {
+      toast(`✗ ${data.error || 'Alert failed'}`, true);
+    }
+  } catch(e) {
+    toast('Cannot reach API — is XAMPP running?', true);
+  }
+}
+
+async function sendAlertFromBanner(channel) {
+  if (!bannerStudentId) return;
+  await alertStudent({ stopPropagation:()=>{} }, bannerStudentId, channel);
+}
+
+function openModalFromBanner() {
+  if (bannerStudentId) openModal(bannerStudentId);
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────
+function openModal(id) {
+  const s = allStudents.find(x => x.student_id === id);
+  if (!s) return;
+  const conf = (s.confidence_score * 100).toFixed(1);
+  const fill = s.risk_level==='HIGH'?'#e05555':s.risk_level==='MEDIUM'?'#d4843a':'#4aab6d';
+
+  document.getElementById('modal-title').textContent = `${s.name} — Student #${s.student_id}`;
+  document.getElementById('modal-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="font-size:28px;font-weight:700;color:${fill}">${conf}%</div>
+      <div>
+        <div style="font-size:12px;color:var(--text3)">burnout confidence</div>
+        <span class="badge badge-${s.risk_level.toLowerCase()}">${s.risk_level} RISK</span>
+      </div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-stat"><div class="detail-label">Last mood</div><div class="detail-val">${s.last_mood}/10</div></div>
+      <div class="detail-stat"><div class="detail-label">7d avg mood</div><div class="detail-val">${s.avg_mood_7d}/10</div></div>
+      <div class="detail-stat"><div class="detail-label">Avg sleep 7d</div><div class="detail-val">${s.avg_sleep_7d}h</div></div>
+      <div class="detail-stat"><div class="detail-label">Avg stress 7d</div><div class="detail-val">${s.avg_stress_7d}/10</div></div>
+      <div class="detail-stat"><div class="detail-label">Mood slope</div>
+        <div class="detail-val" style="color:${s.mood_slope_7d<0?'var(--red)':'var(--green)'}">${s.mood_slope_7d>0?'+':''}${s.mood_slope_7d}/day</div></div>
+      <div class="detail-stat"><div class="detail-label">Est. days to burnout</div>
+        <div class="detail-val" style="color:${s.days_to_burnout_est&&s.days_to_burnout_est<=7?'var(--red)':'inherit'}">${s.days_to_burnout_est?'~'+s.days_to_burnout_est+' days':'—'}</div></div>
+    </div>
+    <div class="sparkline-section">
+      <div class="spark-label">Mood trend — last 7d (simulated)</div>
+      <div class="sparkline" id="modal-spark"></div>
+    </div>`;
+
+  // Draw sparkline from simulated recent data
+  const spark = document.getElementById('modal-spark');
+  const base = s.avg_mood_7d ?? 5;
+  const slope = s.mood_slope_7d ?? 0;
+  const bars = Array.from({length:7},(_,i)=>{
+    const m = Math.max(1, Math.min(10, base + slope*(i-3) + (Math.random()-.5)*.6));
+    const h = Math.round((m/10)*46)+2;
+    const c = m<=3.5?'#e05555':m<=5.5?'#d4843a':'#4aab6d';
+    return `<div class="spark-bar" style="flex:1;height:${h}px;background:${c}" title="Day ${i+1}: ${m.toFixed(1)}"></div>`;
+  }).join('');
+  spark.innerHTML = bars;
+
+  document.getElementById('modal-actions').innerHTML = `
+    <button class="btn btn-whatsapp" onclick="alertStudent(event,${s.student_id},'whatsapp')">📲 Send WhatsApp</button>
+    <button class="btn btn-schedule">📅 Schedule check-in</button>
+    <button class="btn" onclick="closeModal()">Close</button>`;
+
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+// ── CHECK-IN FORM ─────────────────────────────────────────────────────────
+async function submitCheckin() {
+  const payload = {
+    student_id:          parseInt(document.getElementById('ci-id').value),
+    mood_score:          parseFloat(document.getElementById('ci-mood').value),
+    stress_level:        parseFloat(document.getElementById('ci-stress').value),
+    sleep_hours:         parseFloat(document.getElementById('ci-sleep').value),
+    energy_level:        parseFloat(document.getElementById('ci-energy').value),
+    skipped_class:       parseInt(document.getElementById('ci-skipped').value),
+    social_interactions: 3,
+    assignment_load:     3
+  };
+  if (!payload.student_id) { toast('Please enter a student ID', true); return; }
+
+  try {
+    const res  = await fetch(`${getApiBase()}?action=checkin`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast(`✓ Check-in saved for student #${payload.student_id}`);
+    } else {
+      toast(`✗ ${data.error}`, true);
+    }
+  } catch(e) {
+    toast('API unreachable', true);
+  }
+}
+
+// ── SETTINGS ──────────────────────────────────────────────────────────────
+function saveSettings() {
+  localStorage.setItem('skilltrack_api', document.getElementById('cfg-api').value);
+  localStorage.setItem('skilltrack_phone', document.getElementById('cfg-phone').value);
+  toast('Settings saved');
+}
+function loadSettings() {
+  const api = localStorage.getItem('skilltrack_api');
+  if (api) document.getElementById('cfg-api').value = api;
+}
+function getApiBase() {
+  return localStorage.getItem('skilltrack_api') || API;
+}
+async function testConnection() {
+  try {
+    const res = await fetch(`${getApiBase()}?action=stats`);
+    const d = await res.json();
+    if (d.total !== undefined) toast(`✓ Connected — ${d.total} students loaded`);
+    else toast(`API error: ${d.error}`, true);
+  } catch(e) {
+    toast('✗ Cannot connect to API', true);
+  }
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────
+function showSection(name) {
+  ['dashboard','checkin','settings','alerts','counselor'].forEach(s => {
+    const el = document.getElementById(`section-${s}`);
+    if (el) el.style.display = s === name ? '' : 'none';
+  });
+  document.querySelectorAll('.sidebar-item').forEach((el,i) => {
+    el.classList.toggle('active', el.textContent.toLowerCase().includes(name));
+  });
+}
+
+// ── DEMO MODE (when API is offline) ───────────────────────────────────────
+function renderDemoMode() {
+  document.getElementById('st-total').textContent = '50';
+  document.getElementById('st-high').textContent  = '7';
+  document.getElementById('st-watch').textContent = '12';
+  document.getElementById('st-safe').textContent  = '31';
+  const demoStudents = [
+    {student_id:7,name:'Harish',risk_level:'HIGH',confidence_score:.84,last_mood:2.3,avg_mood_7d:3.1,avg_stress_7d:8.2,avg_sleep_7d:4.5,trend:'declining',mood_slope_7d:-.41,days_to_burnout_est:3},
+    {student_id:3,name:'Rohit',risk_level:'HIGH',confidence_score:.77,last_mood:3.1,avg_mood_7d:3.8,avg_stress_7d:7.9,avg_sleep_7d:4.9,trend:'declining',mood_slope_7d:-.28,days_to_burnout_est:5},
+    {student_id:12,name:'Meera',risk_level:'MEDIUM',confidence_score:.61,last_mood:4.2,avg_mood_7d:4.7,avg_stress_7d:6.8,avg_sleep_7d:5.8,trend:'declining',mood_slope_7d:-.15,days_to_burnout_est:9},
+    {student_id:1,name:'Aarav',risk_level:'LOW',confidence_score:.28,last_mood:7.1,avg_mood_7d:7.3,avg_stress_7d:4.1,avg_sleep_7d:7.2,trend:'stable',mood_slope_7d:.02,days_to_burnout_est:null},
+  ];
+  allStudents = demoStudents;
+  renderTable(demoStudents);
+  showBanner(demoStudents);
+  document.getElementById('sb-model').textContent = 'Demo mode — connect XAMPP to load live data';
+}
+
+// ── UTILITIES ─────────────────────────────────────────────────────────────
+function toast(msg, isError=false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = isError ? 'var(--red-bg)' : 'var(--surface2)';
+  el.style.color       = isError ? 'var(--red)'    : 'var(--green)';
+  el.style.borderColor = isError ? 'var(--red-border)' : 'var(--green-border)';
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3500);
+}
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideError() {
+  document.getElementById('errorBox').style.display = 'none';
+}
+</script>
+</body>
+</html>

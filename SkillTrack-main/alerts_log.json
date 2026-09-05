@@ -1,0 +1,47 @@
+[
+    {
+        "student_id": 31,
+        "name": "Manish",
+        "channel": "whatsapp",
+        "risk": "LOW",
+        "confidence": 49.8,
+        "time": "2026-05-14 07:24:22",
+        "status": "simulated"
+    },
+    {
+        "student_id": 31,
+        "name": "Manish",
+        "channel": "whatsapp",
+        "risk": "LOW",
+        "confidence": 49.8,
+        "time": "2026-05-14 07:24:24",
+        "status": "simulated"
+    },
+    {
+        "student_id": 1,
+        "name": "Aarav",
+        "channel": "whatsapp",
+        "risk": "HIGH",
+        "confidence": 49.8,
+        "time": "2026-05-14 13:05:53",
+        "status": "simulated"
+    },
+    {
+        "student_id": 1,
+        "name": "Aarav",
+        "channel": "whatsapp",
+        "risk": "HIGH",
+        "confidence": 49.8,
+        "time": "2026-05-14 13:12:47",
+        "status": "simulated"
+    },
+    {
+        "student_id": 1,
+        "name": "Aarav",
+        "channel": "whatsapp",
+        "risk": "HIGH",
+        "confidence": 49.8,
+        "time": "2026-05-15 08:57:22",
+        "status": "simulated"
+    }
+]
